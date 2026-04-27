@@ -7,7 +7,7 @@ Real-time logistics dashboards built with Spring Boot 4, Spring Data JDBC, Angul
 - Backend: Java 25, Spring Boot 4, Spring Data JDBC, Flyway, Caffeine cache
 - Frontend: Angular 21 (standalone components), TypeScript, SCSS
 - Database: MySQL 8
-- CI: GitHub Actions (backend tests + frontend build)
+- CI: GitHub Actions (`sse-api` tests + `sse-web` build)
 
 ## Why SSE for dashboards
 
@@ -80,24 +80,24 @@ Example request:
 docker compose up -d
 ```
 
-### 2) Run backend
+### 2) Run API (`sse-api`)
 
 ```bash
-cd backend
+cd sse-api
 ./mvnw spring-boot:run
 ```
 
 On Windows:
 
 ```powershell
-cd backend
+cd sse-api
 .\mvnw.cmd spring-boot:run
 ```
 
-### 3) Run frontend
+### 3) Run web (`sse-web`)
 
 ```bash
-cd frontend
+cd sse-web
 npm install
 npm start
 ```
@@ -106,7 +106,7 @@ Open [http://localhost:4200](http://localhost:4200).
 
 ## Configuration
 
-Backend defaults are in `backend/src/main/resources/application.properties` and profile files.
+API defaults are in `sse-api/src/main/resources/application.properties` and profile files.
 
 Important environment variables:
 
@@ -115,8 +115,12 @@ Important environment variables:
 - `DB_PASSWORD` (default: `logistics`)
 - `APP_CORS_ALLOWED_ORIGINS` (default: `http://localhost:4200`)
 - `DASHBOARD_STREAM_INTERVAL_MS` (default: `5000`)
+- `DASHBOARD_DEMO_STREAM_ENABLED` (default: `true` in `dev`, `false` otherwise)
+- `DASHBOARD_DEMO_STREAM_INTERVAL_MS` (default: `4000`)
+
+When demo stream is enabled, the backend continuously mutates shipment, inventory, and KPI data so SSE dashboards visibly update in real time.
 
 ## Verification
 
-- Backend tests: `cd backend && ./mvnw test`
-- Frontend build: `cd frontend && npm run build`
+- API tests: `cd sse-api && ./mvnw test`
+- Web build: `cd sse-web && npm run build`

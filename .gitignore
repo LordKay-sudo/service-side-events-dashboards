@@ -1,10 +1,10 @@
 # Backend
-backend/target/
+sse-api/target/
 # Frontend
-frontend/node_modules/
-frontend/dist/
-frontend/.angular/
-frontend/coverage/
+sse-web/node_modules/
+sse-web/dist/
+sse-web/.angular/
+sse-web/coverage/
 
 # IDE
 .idea/

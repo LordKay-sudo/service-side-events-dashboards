@@ -24,10 +24,10 @@ public class DashboardQueryRepository {
         String sql = """
                 SELECT
                   (SELECT COUNT(*) FROM customer_orders) AS total_orders,
-                  (SELECT COUNT(*) FROM customer_orders WHERE status IN ('CREATED', 'PICKING', 'PACKING')) AS open_orders,
-                  (SELECT COUNT(*) FROM shipments WHERE status = 'IN_TRANSIT') AS in_transit_shipments,
-                  (SELECT COUNT(*) FROM shipments WHERE status = 'DELIVERED' AND delivered_at IS NOT NULL) AS delivered_today,
-                  (SELECT COUNT(*) FROM shipments WHERE delayed = TRUE) AS delayed_shipments,
+                  (SELECT COUNT(*) FROM customer_orders WHERE order_status IN ('CREATED', 'PICKING', 'PACKING')) AS open_orders,
+                  (SELECT COUNT(*) FROM shipments WHERE shipment_status = 'IN_TRANSIT') AS in_transit_shipments,
+                  (SELECT COUNT(*) FROM shipments WHERE shipment_status = 'DELIVERED' AND delivered_at IS NOT NULL) AS delivered_today,
+                  (SELECT COUNT(*) FROM shipments WHERE is_delayed = TRUE) AS delayed_shipments,
                   (SELECT COUNT(*) FROM inventory_levels WHERE quantity_on_hand <= reorder_level) AS low_stock_alerts,
                   (SELECT COUNT(*) FROM fleet_vehicles WHERE operational_status = 'ACTIVE') AS active_vehicles
                 """;
@@ -64,11 +64,11 @@ public class DashboardQueryRepository {
         String sql = """
                 SELECT tracking_number,
                        route_code,
-                       status,
+                       shipment_status,
                        eta,
-                       delayed
+                       is_delayed AS delayed
                 FROM shipments
-                ORDER BY delayed DESC, eta ASC
+                ORDER BY is_delayed DESC, eta ASC
                 LIMIT ?
                 """;
         return jdbcTemplate.query(sql, this::mapShipmentStatus, limit);
@@ -100,7 +100,7 @@ public class DashboardQueryRepository {
         return new ShipmentStatus(
                 rs.getString("tracking_number"),
                 rs.getString("route_code"),
-                rs.getString("status"),
+                rs.getString("shipment_status"),
                 rs.getObject("eta", OffsetDateTime.class),
                 rs.getBoolean("delayed")
         );

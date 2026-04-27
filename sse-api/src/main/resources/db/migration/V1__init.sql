@@ -28,7 +28,7 @@ CREATE TABLE customer_orders (
     order_number VARCHAR(64) NOT NULL UNIQUE,
     customer_name VARCHAR(255) NOT NULL,
     destination_city VARCHAR(128) NOT NULL,
-    status VARCHAR(32) NOT NULL,
+    order_status VARCHAR(32) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -37,9 +37,9 @@ CREATE TABLE shipments (
     tracking_number VARCHAR(64) NOT NULL UNIQUE,
     order_id VARCHAR(36) NOT NULL,
     route_code VARCHAR(32) NOT NULL,
-    status VARCHAR(32) NOT NULL,
-    version BIGINT NOT NULL DEFAULT 0,
-    delayed BOOLEAN NOT NULL DEFAULT FALSE,
+    shipment_status VARCHAR(32) NOT NULL,
+    lock_version BIGINT NOT NULL DEFAULT 0,
+    is_delayed BOOLEAN NOT NULL DEFAULT FALSE,
     eta TIMESTAMP NOT NULL,
     delivered_at TIMESTAMP NULL,
     CONSTRAINT fk_shipments_order FOREIGN KEY (order_id) REFERENCES customer_orders(id)
@@ -75,9 +75,9 @@ CREATE TABLE idempotency_keys (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_orders_status ON customer_orders(status);
-CREATE INDEX idx_shipments_status ON shipments(status);
-CREATE INDEX idx_shipments_delayed ON shipments(delayed);
+CREATE INDEX idx_orders_status ON customer_orders(order_status);
+CREATE INDEX idx_shipments_status ON shipments(shipment_status);
+CREATE INDEX idx_shipments_delayed ON shipments(is_delayed);
 CREATE INDEX idx_inventory_threshold ON inventory_levels(quantity_on_hand, reorder_level);
 CREATE INDEX idx_kpi_snapshot_at ON kpi_snapshots(snapshot_at);
 
@@ -100,14 +100,14 @@ INSERT INTO inventory_levels (id, product_id, warehouse_id, quantity_on_hand, re
 ('c4444444-4444-4444-4444-444444444444', 'b4444444-4444-4444-4444-444444444444', 'a2222222-2222-2222-2222-222222222222', 90, 20),
 ('c5555555-5555-5555-5555-555555555555', 'b5555555-5555-5555-5555-555555555555', 'a3333333-3333-3333-3333-333333333333', 12, 20);
 
-INSERT INTO customer_orders (id, order_number, customer_name, destination_city, status) VALUES
+INSERT INTO customer_orders (id, order_number, customer_name, destination_city, order_status) VALUES
 ('d1111111-1111-1111-1111-111111111111', 'ORD-1001', 'Savannah Freight', 'Lusaka', 'CREATED'),
 ('d2222222-2222-2222-2222-222222222222', 'ORD-1002', 'Delta Retail', 'Gweru', 'PICKING'),
 ('d3333333-3333-3333-3333-333333333333', 'ORD-1003', 'Valley Traders', 'Masvingo', 'DELIVERED'),
 ('d4444444-4444-4444-4444-444444444444', 'ORD-1004', 'AfriBuild', 'Blantyre', 'PACKING'),
 ('d5555555-5555-5555-5555-555555555555', 'ORD-1005', 'Metro Foods', 'Harare', 'DELIVERED');
 
-INSERT INTO shipments (id, tracking_number, order_id, route_code, status, version, delayed, eta, delivered_at) VALUES
+INSERT INTO shipments (id, tracking_number, order_id, route_code, shipment_status, lock_version, is_delayed, eta, delivered_at) VALUES
 ('e1111111-1111-1111-1111-111111111111', 'TRK-7001', 'd1111111-1111-1111-1111-111111111111', 'ZR-NORTH', 'IN_TRANSIT', 0, FALSE, '2026-04-27 16:00:00', NULL),
 ('e2222222-2222-2222-2222-222222222222', 'TRK-7002', 'd2222222-2222-2222-2222-222222222222', 'ZR-CENTRAL', 'IN_TRANSIT', 0, TRUE, '2026-04-27 20:00:00', NULL),
 ('e3333333-3333-3333-3333-333333333333', 'TRK-7003', 'd3333333-3333-3333-3333-333333333333', 'ZR-SOUTH', 'DELIVERED', 0, FALSE, '2026-04-26 10:00:00', '2026-04-26 18:00:00'),

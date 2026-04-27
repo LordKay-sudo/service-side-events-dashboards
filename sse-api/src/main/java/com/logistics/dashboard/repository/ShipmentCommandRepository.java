@@ -16,8 +16,8 @@ public class ShipmentCommandRepository {
     public int updateStatusByTrackingNumber(String trackingNumber, String status, boolean delayed, long expectedVersion) {
         String sql = """
                 UPDATE shipments
-                SET status = ?, delayed = ?, version = version + 1
-                WHERE tracking_number = ? AND version = ?
+                SET shipment_status = ?, is_delayed = ?, lock_version = lock_version + 1
+                WHERE tracking_number = ? AND lock_version = ?
                 """;
         return jdbcTemplate.update(sql, status, delayed, trackingNumber, expectedVersion);
     }
@@ -30,15 +30,15 @@ public class ShipmentCommandRepository {
 
     public ShipmentStatusUpdateResponse fetchByTrackingNumber(String trackingNumber) {
         String sql = """
-                SELECT tracking_number, status, delayed, version
+                SELECT tracking_number, shipment_status, is_delayed AS delayed, lock_version
                 FROM shipments
                 WHERE tracking_number = ?
                 """;
         return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new ShipmentStatusUpdateResponse(
                 rs.getString("tracking_number"),
-                rs.getString("status"),
+                rs.getString("shipment_status"),
                 rs.getBoolean("delayed"),
-                rs.getLong("version")
+                rs.getLong("lock_version")
         ), trackingNumber);
     }
 }

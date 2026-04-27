@@ -12,9 +12,9 @@
     </parent>
 
     <groupId>com.logistics</groupId>
-    <artifactId>backend</artifactId>
+    <artifactId>sse-api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>backend</name>
+    <name>sse-api</name>
     <description>SSE Logistics Dashboard API</description>
 
     <properties>
