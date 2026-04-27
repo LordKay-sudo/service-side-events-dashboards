@@ -2,6 +2,12 @@
 
 Real-time logistics dashboards built with Spring Boot 4, Spring Data JDBC, Angular 21, and MySQL.
 
+## Demo
+
+Dashboard running locally with live SSE updates:
+
+![Logistics Live Dashboard](docs/dashboard-live.png)
+
 ## Tech Stack
 
 - Backend: Java 25, Spring Boot 4, Spring Data JDBC, Flyway, Caffeine cache

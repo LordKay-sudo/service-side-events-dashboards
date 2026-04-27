@@ -1,40 +1,58 @@
 <main class="page">
   <header class="header">
-    <h1>{{ title }}</h1>
-    <p>Live operational intelligence powered by Server-Sent Events.</p>
+    <div>
+      <h1>{{ title }}</h1>
+      <p>Live operational intelligence powered by Server-Sent Events.</p>
+      <p class="stream-meta">{{ streamSummary() }}</p>
+    </div>
     <span class="status" [class.status--online]="connected()">
+      <span class="status__dot"></span>
       {{ connected() ? 'Live stream connected' : 'Waiting for stream...' }}
     </span>
-    <p class="stream-meta">{{ streamSummary() }}</p>
   </header>
+
+  <section class="quick-stats">
+    <div class="quick-stats__item">
+      <span>Warehouse visibility</span>
+      <strong>Real-time</strong>
+    </div>
+    <div class="quick-stats__item">
+      <span>Delivery monitoring</span>
+      <strong>Live ETA + delays</strong>
+    </div>
+    <div class="quick-stats__item">
+      <span>Data freshness</span>
+      <strong>{{ connected() ? 'Streaming' : 'Reconnecting' }}</strong>
+    </div>
+  </section>
 
   @if (overview(); as o) {
   <section class="grid grid--metrics">
-    <article class="card metric">
+    <article class="card metric metric--accent">
       <h3>Total orders</h3>
       <p>{{ o.totalOrders }}</p>
     </article>
-    <article class="card metric">
+    <article class="card metric metric--accent">
       <h3>Open orders</h3>
       <p>{{ o.openOrders }}</p>
     </article>
-    <article class="card metric">
+    <article class="card metric metric--accent">
       <h3>In transit</h3>
       <p>{{ o.inTransitShipments }}</p>
     </article>
-    <article class="card metric">
+    <article class="card metric metric--accent">
       <h3>Delivered today</h3>
       <p>{{ o.deliveredToday }}</p>
     </article>
-    <article class="card metric warning">
+    <article class="card metric warning metric--accent">
       <h3>Delayed shipments</h3>
       <p>{{ delayedShipments() }}</p>
     </article>
-    <article class="card metric warning">
+    <article class="card metric warning metric--accent">
       <h3>Low stock alerts</h3>
       <p>{{ o.lowStockAlerts }}</p>
     </article>
-    <article class="card metric">
+    <article class="card metric metric--accent">
       <h3>Active vehicles</h3>
       <p>{{ o.activeVehicles }}</p>
     </article>
@@ -61,7 +79,12 @@
             <td>{{ alert.productName }}</td>
             <td>{{ alert.warehouseName }}</td>
             <td>{{ alert.quantityOnHand }}</td>
-            <td>{{ alert.reorderLevel }}</td>
+            <td><span class="pill pill--warning">{{ alert.reorderLevel }}</span></td>
+          </tr>
+          }
+          @if (inventoryAlerts().length === 0) {
+          <tr>
+            <td colspan="5" class="empty-state">No active inventory alerts right now.</td>
           </tr>
           }
         </tbody>
@@ -84,8 +107,17 @@
           <tr [class.row--delayed]="shipment.delayed">
             <td>{{ shipment.trackingNumber }}</td>
             <td>{{ shipment.routeCode }}</td>
-            <td>{{ shipment.status }}</td>
+            <td>
+              <span class="pill" [class.pill--danger]="shipment.delayed">
+                {{ shipment.status }}
+              </span>
+            </td>
             <td>{{ shipment.eta | date:'dd/MM/yyyy HH:mm' }}</td>
+          </tr>
+          }
+          @if (shipmentStatuses().length === 0) {
+          <tr>
+            <td colspan="4" class="empty-state">No shipment status rows available yet.</td>
           </tr>
           }
         </tbody>
@@ -101,6 +133,9 @@
           <span>OTD: {{ point.onTimeDeliveryRate }}%</span>
           <span>Inv Turnover: {{ point.inventoryTurnoverRatio }}</span>
         </li>
+        }
+        @if (kpiTrend().length === 0) {
+        <li class="empty-state empty-state--list">KPI trend points will appear as snapshots stream in.</li>
         }
       </ul>
     </article>

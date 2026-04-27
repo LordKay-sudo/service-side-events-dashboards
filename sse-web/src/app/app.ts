@@ -76,6 +76,8 @@ export class App implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    void this.loadInitialSnapshots();
+
     this.openStream<OperationsOverview>('overview', (payload) => {
       this.overview.set(payload);
     });
@@ -104,7 +106,7 @@ export class App implements OnInit, OnDestroy {
     source.onerror = () => {
       this.connected.set(false);
     };
-    source.onmessage = (event) => {
+    const consumePayload = (event: MessageEvent<string>) => {
       try {
         const envelope = JSON.parse(event.data) as DashboardEventEnvelope<T>;
         onPayload(envelope.payload);
@@ -112,6 +114,44 @@ export class App implements OnInit, OnDestroy {
         this.connected.set(false);
       }
     };
+
+    // Backend emits named SSE events (overview, inventory-alerts, etc.),
+    // so subscribe explicitly to each stream name.
+    source.addEventListener(streamName, (event) => {
+      consumePayload(event as MessageEvent<string>);
+    });
+
+    // Keep default handler for compatibility if unnamed "message" events are used.
+    source.onmessage = (event) => consumePayload(event);
+
     this.streams.push(source);
+  }
+
+  private async loadInitialSnapshots(): Promise<void> {
+    const [overview, inventoryAlerts, shipmentStatuses, kpiTrend] = await Promise.all([
+      this.loadJson<OperationsOverview>('/overview'),
+      this.loadJson<InventoryAlert[]>('/inventory-alerts'),
+      this.loadJson<ShipmentStatus[]>('/shipment-status'),
+      this.loadJson<KpiPoint[]>('/kpi-trend')
+    ]);
+
+    if (overview) {
+      this.overview.set(overview);
+    }
+    this.inventoryAlerts.set(inventoryAlerts ?? []);
+    this.shipmentStatuses.set(shipmentStatuses ?? []);
+    this.kpiTrend.set(kpiTrend ?? []);
+  }
+
+  private async loadJson<T>(path: string): Promise<T | null> {
+    try {
+      const response = await fetch(`${this.apiBase}${path}`);
+      if (!response.ok) {
+        return null;
+      }
+      return (await response.json()) as T;
+    } catch (_error) {
+      return null;
+    }
   }
 }
