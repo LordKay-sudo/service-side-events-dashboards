@@ -1,0 +1,137 @@
+CREATE TABLE warehouses (
+    id VARCHAR(36) PRIMARY KEY,
+    code VARCHAR(32) NOT NULL UNIQUE,
+    name VARCHAR(128) NOT NULL,
+    city VARCHAR(128) NOT NULL
+);
+
+CREATE TABLE products (
+    id VARCHAR(36) PRIMARY KEY,
+    sku VARCHAR(64) NOT NULL UNIQUE,
+    product_name VARCHAR(255) NOT NULL,
+    category VARCHAR(64) NOT NULL
+);
+
+CREATE TABLE inventory_levels (
+    id VARCHAR(36) PRIMARY KEY,
+    product_id VARCHAR(36) NOT NULL,
+    warehouse_id VARCHAR(36) NOT NULL,
+    quantity_on_hand INT NOT NULL,
+    reorder_level INT NOT NULL,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_inventory_product FOREIGN KEY (product_id) REFERENCES products(id),
+    CONSTRAINT fk_inventory_warehouse FOREIGN KEY (warehouse_id) REFERENCES warehouses(id)
+);
+
+CREATE TABLE customer_orders (
+    id VARCHAR(36) PRIMARY KEY,
+    order_number VARCHAR(64) NOT NULL UNIQUE,
+    customer_name VARCHAR(255) NOT NULL,
+    destination_city VARCHAR(128) NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE shipments (
+    id VARCHAR(36) PRIMARY KEY,
+    tracking_number VARCHAR(64) NOT NULL UNIQUE,
+    order_id VARCHAR(36) NOT NULL,
+    route_code VARCHAR(32) NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    version BIGINT NOT NULL DEFAULT 0,
+    delayed BOOLEAN NOT NULL DEFAULT FALSE,
+    eta TIMESTAMP NOT NULL,
+    delivered_at TIMESTAMP NULL,
+    CONSTRAINT fk_shipments_order FOREIGN KEY (order_id) REFERENCES customer_orders(id)
+);
+
+CREATE TABLE shipment_events (
+    id VARCHAR(36) PRIMARY KEY,
+    shipment_id VARCHAR(36) NOT NULL,
+    event_type VARCHAR(64) NOT NULL,
+    event_time TIMESTAMP NOT NULL,
+    event_note VARCHAR(255),
+    CONSTRAINT fk_shipment_events_shipment FOREIGN KEY (shipment_id) REFERENCES shipments(id)
+);
+
+CREATE TABLE fleet_vehicles (
+    id VARCHAR(36) PRIMARY KEY,
+    plate_number VARCHAR(32) NOT NULL UNIQUE,
+    operational_status VARCHAR(32) NOT NULL,
+    current_hub VARCHAR(128) NOT NULL
+);
+
+CREATE TABLE kpi_snapshots (
+    id VARCHAR(36) PRIMARY KEY,
+    snapshot_at TIMESTAMP NOT NULL,
+    on_time_delivery_rate DECIMAL(5,2) NOT NULL,
+    inventory_turnover_ratio DECIMAL(6,2) NOT NULL
+);
+
+CREATE TABLE idempotency_keys (
+    idempotency_key VARCHAR(128) PRIMARY KEY,
+    request_scope VARCHAR(64) NOT NULL,
+    resource_id VARCHAR(36) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_orders_status ON customer_orders(status);
+CREATE INDEX idx_shipments_status ON shipments(status);
+CREATE INDEX idx_shipments_delayed ON shipments(delayed);
+CREATE INDEX idx_inventory_threshold ON inventory_levels(quantity_on_hand, reorder_level);
+CREATE INDEX idx_kpi_snapshot_at ON kpi_snapshots(snapshot_at);
+
+INSERT INTO warehouses (id, code, name, city) VALUES
+('a1111111-1111-1111-1111-111111111111', 'WH-HRE-01', 'Harare Central Hub', 'Harare'),
+('a2222222-2222-2222-2222-222222222222', 'WH-BYO-01', 'Bulawayo Regional Hub', 'Bulawayo'),
+('a3333333-3333-3333-3333-333333333333', 'WH-MUT-01', 'Mutare Border Hub', 'Mutare');
+
+INSERT INTO products (id, sku, product_name, category) VALUES
+('b1111111-1111-1111-1111-111111111111', 'SKU-AXLE-01', 'Heavy Duty Axle Kit', 'Parts'),
+('b2222222-2222-2222-2222-222222222222', 'SKU-BEAR-04', 'Bearing Assembly', 'Parts'),
+('b3333333-3333-3333-3333-333333333333', 'SKU-TIRE-09', 'All Terrain Tire', 'Consumables'),
+('b4444444-4444-4444-4444-444444444444', 'SKU-SENS-11', 'Temperature Sensor', 'Electronics'),
+('b5555555-5555-5555-5555-555555555555', 'SKU-BATT-22', 'Industrial Battery Pack', 'Electronics');
+
+INSERT INTO inventory_levels (id, product_id, warehouse_id, quantity_on_hand, reorder_level) VALUES
+('c1111111-1111-1111-1111-111111111111', 'b1111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', 120, 40),
+('c2222222-2222-2222-2222-222222222222', 'b2222222-2222-2222-2222-222222222222', 'a1111111-1111-1111-1111-111111111111', 22, 30),
+('c3333333-3333-3333-3333-333333333333', 'b3333333-3333-3333-3333-333333333333', 'a2222222-2222-2222-2222-222222222222', 18, 25),
+('c4444444-4444-4444-4444-444444444444', 'b4444444-4444-4444-4444-444444444444', 'a2222222-2222-2222-2222-222222222222', 90, 20),
+('c5555555-5555-5555-5555-555555555555', 'b5555555-5555-5555-5555-555555555555', 'a3333333-3333-3333-3333-333333333333', 12, 20);
+
+INSERT INTO customer_orders (id, order_number, customer_name, destination_city, status) VALUES
+('d1111111-1111-1111-1111-111111111111', 'ORD-1001', 'Savannah Freight', 'Lusaka', 'CREATED'),
+('d2222222-2222-2222-2222-222222222222', 'ORD-1002', 'Delta Retail', 'Gweru', 'PICKING'),
+('d3333333-3333-3333-3333-333333333333', 'ORD-1003', 'Valley Traders', 'Masvingo', 'DELIVERED'),
+('d4444444-4444-4444-4444-444444444444', 'ORD-1004', 'AfriBuild', 'Blantyre', 'PACKING'),
+('d5555555-5555-5555-5555-555555555555', 'ORD-1005', 'Metro Foods', 'Harare', 'DELIVERED');
+
+INSERT INTO shipments (id, tracking_number, order_id, route_code, status, version, delayed, eta, delivered_at) VALUES
+('e1111111-1111-1111-1111-111111111111', 'TRK-7001', 'd1111111-1111-1111-1111-111111111111', 'ZR-NORTH', 'IN_TRANSIT', 0, FALSE, '2026-04-27 16:00:00', NULL),
+('e2222222-2222-2222-2222-222222222222', 'TRK-7002', 'd2222222-2222-2222-2222-222222222222', 'ZR-CENTRAL', 'IN_TRANSIT', 0, TRUE, '2026-04-27 20:00:00', NULL),
+('e3333333-3333-3333-3333-333333333333', 'TRK-7003', 'd3333333-3333-3333-3333-333333333333', 'ZR-SOUTH', 'DELIVERED', 0, FALSE, '2026-04-26 10:00:00', '2026-04-26 18:00:00'),
+('e4444444-4444-4444-4444-444444444444', 'TRK-7004', 'd4444444-4444-4444-4444-444444444444', 'ZR-EAST', 'PENDING_DISPATCH', 0, FALSE, '2026-04-28 10:30:00', NULL),
+('e5555555-5555-5555-5555-555555555555', 'TRK-7005', 'd5555555-5555-5555-5555-555555555555', 'ZR-METRO', 'DELIVERED', 0, FALSE, '2026-04-26 22:00:00', '2026-04-27 08:30:00');
+
+INSERT INTO shipment_events (id, shipment_id, event_type, event_time, event_note) VALUES
+('f1111111-1111-1111-1111-111111111111', 'e1111111-1111-1111-1111-111111111111', 'DEPARTED_HUB', '2026-04-27 07:00:00', 'Departed Harare Central Hub'),
+('f2222222-2222-2222-2222-222222222222', 'e2222222-2222-2222-2222-222222222222', 'ROUTE_DELAY', '2026-04-27 06:30:00', 'Traffic disruption on route'),
+('f3333333-3333-3333-3333-333333333333', 'e3333333-3333-3333-3333-333333333333', 'DELIVERED', '2026-04-26 18:00:00', 'Delivered to consignee'),
+('f4444444-4444-4444-4444-444444444444', 'e4444444-4444-4444-4444-444444444444', 'READY_FOR_DISPATCH', '2026-04-27 07:30:00', 'Awaiting vehicle assignment'),
+('f5555555-5555-5555-5555-555555555555', 'e5555555-5555-5555-5555-555555555555', 'DELIVERED', '2026-04-27 08:30:00', 'Delivered to store');
+
+INSERT INTO fleet_vehicles (id, plate_number, operational_status, current_hub) VALUES
+('g1111111-1111-1111-1111-111111111111', 'AFR-1023', 'ACTIVE', 'Harare'),
+('g2222222-2222-2222-2222-222222222222', 'AFR-1188', 'ACTIVE', 'Bulawayo'),
+('g3333333-3333-3333-3333-333333333333', 'AFR-1301', 'MAINTENANCE', 'Harare'),
+('g4444444-4444-4444-4444-444444444444', 'AFR-1455', 'ACTIVE', 'Mutare'),
+('g5555555-5555-5555-5555-555555555555', 'AFR-1672', 'ACTIVE', 'Harare');
+
+INSERT INTO kpi_snapshots (id, snapshot_at, on_time_delivery_rate, inventory_turnover_ratio) VALUES
+('h1111111-1111-1111-1111-111111111111', '2026-04-22 09:00:00', 94.20, 3.40),
+('h2222222-2222-2222-2222-222222222222', '2026-04-23 09:00:00', 93.80, 3.48),
+('h3333333-3333-3333-3333-333333333333', '2026-04-24 09:00:00', 95.10, 3.52),
+('h4444444-4444-4444-4444-444444444444', '2026-04-25 09:00:00', 92.70, 3.44),
+('h5555555-5555-5555-5555-555555555555', '2026-04-26 09:00:00', 94.90, 3.57),
+('h6666666-6666-6666-6666-666666666666', '2026-04-27 09:00:00', 95.30, 3.61);

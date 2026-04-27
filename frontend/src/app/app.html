@@ -1,0 +1,108 @@
+<main class="page">
+  <header class="header">
+    <h1>{{ title }}</h1>
+    <p>Live operational intelligence powered by Server-Sent Events.</p>
+    <span class="status" [class.status--online]="connected()">
+      {{ connected() ? 'Live stream connected' : 'Waiting for stream...' }}
+    </span>
+    <p class="stream-meta">{{ streamSummary() }}</p>
+  </header>
+
+  @if (overview(); as o) {
+  <section class="grid grid--metrics">
+    <article class="card metric">
+      <h3>Total orders</h3>
+      <p>{{ o.totalOrders }}</p>
+    </article>
+    <article class="card metric">
+      <h3>Open orders</h3>
+      <p>{{ o.openOrders }}</p>
+    </article>
+    <article class="card metric">
+      <h3>In transit</h3>
+      <p>{{ o.inTransitShipments }}</p>
+    </article>
+    <article class="card metric">
+      <h3>Delivered today</h3>
+      <p>{{ o.deliveredToday }}</p>
+    </article>
+    <article class="card metric warning">
+      <h3>Delayed shipments</h3>
+      <p>{{ delayedShipments() }}</p>
+    </article>
+    <article class="card metric warning">
+      <h3>Low stock alerts</h3>
+      <p>{{ o.lowStockAlerts }}</p>
+    </article>
+    <article class="card metric">
+      <h3>Active vehicles</h3>
+      <p>{{ o.activeVehicles }}</p>
+    </article>
+  </section>
+  }
+
+  <section class="grid grid--panels">
+    <article class="card panel">
+      <h2>Inventory alerts</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>Product</th>
+            <th>Warehouse</th>
+            <th>Qty</th>
+            <th>Reorder</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (alert of inventoryAlerts(); track alert.sku + alert.warehouseName) {
+          <tr>
+            <td>{{ alert.sku }}</td>
+            <td>{{ alert.productName }}</td>
+            <td>{{ alert.warehouseName }}</td>
+            <td>{{ alert.quantityOnHand }}</td>
+            <td>{{ alert.reorderLevel }}</td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card panel">
+      <h2>Shipment status</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Tracking</th>
+            <th>Route</th>
+            <th>Status</th>
+            <th>ETA</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (shipment of shipmentStatuses(); track shipment.trackingNumber) {
+          <tr [class.row--delayed]="shipment.delayed">
+            <td>{{ shipment.trackingNumber }}</td>
+            <td>{{ shipment.routeCode }}</td>
+            <td>{{ shipment.status }}</td>
+            <td>{{ shipment.eta | date:'dd/MM/yyyy HH:mm' }}</td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </article>
+
+    <article class="card panel panel--chart">
+      <h2>KPI trend (recent)</h2>
+      <ul>
+        @for (point of kpiTrend(); track point.snapshotAt) {
+        <li>
+          <span>{{ point.snapshotAt | date:'dd/MM HH:mm' }}</span>
+          <span>OTD: {{ point.onTimeDeliveryRate }}%</span>
+          <span>Inv Turnover: {{ point.inventoryTurnoverRatio }}</span>
+        </li>
+        }
+      </ul>
+    </article>
+  </section>
+</main>
