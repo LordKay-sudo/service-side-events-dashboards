@@ -4,9 +4,13 @@ Real-time logistics dashboards built with Spring Boot 4, Spring Data JDBC, Angul
 
 ## Demo
 
-Dashboard running locally with live SSE updates:
+Dashboard screenshot:
 
 ![Logistics Live Dashboard](docs/dashboard-live.png)
+
+Live SSE updates (GIF):
+
+![Logistics Live Dashboard - Live Demo](docs/live-demo.gif)
 
 ## Tech Stack
 
