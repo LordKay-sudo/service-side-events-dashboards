@@ -66,7 +66,7 @@ public class DashboardQueryRepository {
                        route_code,
                        shipment_status,
                        eta,
-                       is_delayed AS delayed
+                       is_delayed AS delayed_flag
                 FROM shipments
                 ORDER BY is_delayed DESC, eta ASC
                 LIMIT ?
@@ -102,7 +102,7 @@ public class DashboardQueryRepository {
                 rs.getString("route_code"),
                 rs.getString("shipment_status"),
                 rs.getObject("eta", OffsetDateTime.class),
-                rs.getBoolean("delayed")
+                rs.getBoolean("delayed_flag")
         );
     }
 
