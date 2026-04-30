@@ -1,4 +1,4 @@
-# Service Side Events Dashboards
+# Server Side Events Dashboards
 
 Real-time logistics dashboards built with Spring Boot 4, Spring Data JDBC, Angular 21, and MySQL.
 
